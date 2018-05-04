@@ -1,0 +1,80 @@
+#define GNU-Compiler rules.
+
+.PHONY: _begin clean doclean $(MODULE_DEPONS_BUILD) $(MODULE_DEPONS_CLEAN)
+
+
+MODULE_OBJ := $(LOCAL_SRC:%.c=%.o)
+MODULE_OBJ := $(MODULE_OBJ:%.cpp=%.o)
+MODULE_OBJ := $(MODULE_OBJ:%.cxx=%.o)
+
+
+build: _begin $(MODULE_OUTPUT)/$(MODULE_TARGET);
+
+_begin: $(MODULE_DEPONS_BUILD)
+	@$(SCRIPTS) ckdir -f "$(MODULE_OBJ) $(MODULE_OUTPUT)/$(MODULE_TARGET)"
+
+$(MODULE_DEPONS_BUILD):
+	@depon=`echo ${dir $@} | sed -e 's:\(\.*\)\(/\)$$:\1:'`;	\
+	depon=`dirname $$depon`; $(MAKE) -C $$depon build
+
+# especially for GNU-Compiler tracking header file 
+MODULE_DEPS := $(patsubst %.o,%.d,$(MODULE_OBJ))
+-include $(MODULE_DEPS)
+
+$(MODULE_OUTPUT)/$(MODULE_SO):	$(MODULE_OBJ)
+	$(LD) -shared -Wl,-soname,$(MODULE_SO) $(LDFLAGS) $(LOCAL_FLAGS) -o $@ $(MODULE_OBJ)  $(LOCAL_LIBS)  $(LIBS)
+
+$(MODULE_OUTPUT)/$(MODULE_EXEC):$(MODULE_OBJ)
+	$(LD) $(LOCAL_FLAGS) $(LDFLAGS) -o $@ $(MODULE_OBJ) $(LOCAL_LIBS) $(LIBS)
+
+$(MODULE_OUTPUT)/$(MODULE_LIB):	$(MODULE_OBJ) $(LOCAL_LIBS)
+	$(AR) $@ $(MODULE_OBJ) $(LOCAL_LIBS)
+
+
+#		@echo  $(1)        $@	
+define COMPILE
+		$($(1)) $($(1)FLAGS) $(LOCAL_FLAGS)  -MD -c  -o $@ $<
+endef
+
+
+COMPILE_C = $(call COMPILE,CC)
+COMPILE_CXX = $(call COMPILE,CXX)
+COMPILE_S = $(call COMPILE,AS)
+COMPILE_HOSTC = $(call COMPILE,HOSTCC)
+
+
+%.o : %.cxx
+	$(COMPILE_CXX)
+	
+%.o : %.cpp
+	$(COMPILE_CXX)
+	
+%.o : %.c
+	$(COMPILE_C)
+
+
+#$(MODULE_OUTPUT)/%.o : $(SOURCE_DIR)/%.cxx
+#	@$(CCC) -MD -c $(CXXFLAGS) $(LOCAL_FLAGS) -o $@ $<
+#	@echo "[compile] : $@ << $<"
+	
+#$(MODULE_OUTPUT)/%.o : $(SOURCE_DIR)/%.cpp
+#	$(CCC) -MD -c $(CXXFLAGS) $(LOCAL_FLAGS) -o $@ $< 
+#	@echo "[compile] : $@ << $<"
+	
+#$(MODULE_OUTPUT)/%.o : $(SOURCE_DIR)/%.c
+#	$(CC) -MD -c $(CFLAGS) $(LOCAL_FLAGS) -o $@ $<
+#	@echo "[compile] : $@ << $<"
+
+clean: doclean $(MODULE_DEPONS_CLEAN) ;
+
+install:
+	@$(SCRIPTS) install  "$(MODULE_OUTPUT)/$(MODULE_TARGET)" "$(MODULE_OUTPUT)/$(MODULE_EXEC)" "$(prefix)"
+uninstall:
+	-@$(SCRIPTS) uninstall  "$(MODULE_TARGET)" "$(MODULE_EXEC)" "$(prefix)"
+
+$(MODULE_DEPONS_CLEAN):
+	@depon=`echo ${dir $@} | sed -e 's:\(\.*\)\(/\)$$:\1:'`;	\
+	depon=`dirname $$depon`; $(MAKE) -C $$depon clean
+
+doclean:
+	-$(RM) $(MODULE_OUTPUT)/$(MODULE_TARGET) $(MODULE_OBJ) $(MODULE_DEPS)

@@ -1,0 +1,13 @@
+#define Makefile variable when GNU-C++ Compiler used.
+
+CCC		:=/usr/bin/xlc++
+CC		:=/usr/bin/xlc
+AR		:=/usr/bin/ar -r
+
+RELEASE_FLAGS	:= -qarch=pwr6 -qtune=pwr6 -qfloat -q32 -O3 -D_REENTRANT -qrtti -bmaxdata:0x80000000/dsa
+DEBUG_FLAGS 	:= -qarch=pwr6 -qtune=pwr6 -qfloat -q32 -g -D_REENTRANT -qrtti	-bmaxdata:0xA0000000/dsa
+PIC_FLAG 		:= -qpic
+
+CXXFLAGS 	:= $(FLAGS) -w -qthreaded 
+CFLAGS 		:= $(FLAGS) -w -qthreaded
+LIBS		:= -lpthread -ldl

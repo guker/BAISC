@@ -1,0 +1,64 @@
+#define Makefile variable when GNU-C++ Compiler used.
+
+CXX		:=/usr/bin/g++
+CC		:=/usr/bin/gcc
+AR		:=/usr/bin/ar -r
+LD		:=/usr/bin/g++
+
+
+#是否显示编译全部信息
+ifndef V
+Q      = @
+ECHO   = printf "$(1)\t%s\n" $(2)
+BRIEF  = CC CXX HOSTCC HOSTLD AS YASM AR LD STRIP CP WINDRES
+SILENT = DEPCC DEPHOSTCC DEPAS DEPYASM RANLIB RM
+
+MSG    = $@
+M      = @$(call ECHO,$(TAG),$@);
+$(foreach VAR,$(BRIEF), \
+    $(eval override $(VAR) = @$$(call ECHO,$(VAR),$$(MSG)); $($(VAR))))
+$(foreach VAR,$(SILENT),$(eval override $(VAR) = @$($(VAR))))
+$(eval INSTALL = @$(call ECHO,INSTALL,$$(^:$(SRC_DIR)/%=%)); $(INSTALL))
+endif
+
+
+RELEASE_FLAGS	:= -O3 -DNDEBUG  -s
+DEBUG_FLAGS 	:= -pg -g  -D_DEBUG
+
+PIC_FLAG 		:= -fPIC
+D_FLAGS			:= -DTIME_H -D_GNU_SOURCE
+
+FF_ROOT := /home/jjzhuang/project/ffmpeg-2.3.3/
+ALLFFLIBS = avcodec avdevice avfilter avformat avutil swscale swresample
+
+#$(ALLFFLIBS:%=-I$(FF_ROOT)lib%)
+
+#不需要ffmpeg
+#LDFLAGS = $(ALLFFLIBS:%=-L$(FF_ROOT)lib%) -L/usr/local/lib -Wl,--as-needed -Wl,--warn-common 
+#LDFLAGS = -Wl,--as-needed -Wl,--warn-common 
+#-Wl,-rpath-link=libpostproc:libswresample:libswscale:libavfilter:libavdevice:libavformat:libavcodec:libavutil:libavresample
+IFLAGS := -I$(FF_ROOT)
+
+ifdef release
+	FLAGS  		= $(BUILD_MODLE) $(RELEASE_FLAGS) 
+	LDFLAGS = -Wl,--as-needed -Wl,--warn-common  $(RELEASE_FLAGS) 
+else
+	FLAGS  		= $(BUILD_MODLE) $(DEBUG_FLAGS)
+	LDFLAGS = -Wl,--as-needed -Wl,--warn-common  $(DEBUG_FLAGS)
+endif
+
+FLAGS += $(IFLAGS) $(PIC_FLAG)  $(D_FLAGS)
+
+
+ifdef m64
+	ADDR_MODEL := -m64
+else
+	ADDR_MODEL := -m32
+endif
+
+CXXFLAGS 	:= $(FLAGS)  -x c++ -w -pthread -pipe -fpermissive -msse -mmmx -msse2 -msse3 -mfpmath=sse $(ADDR_MODEL)
+CCFLAGS 	:= $(FLAGS)  -w -pthread -pipe -msse -mmmx -msse2 -msse3 $(ADDR_MODEL)
+
+#公用的lib
+LIBS		:= -lpthread -ldl -lrt
+#-lm -pthread -lz -lc -lrt

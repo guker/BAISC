@@ -1,0 +1,14 @@
+#define Makefile variable when SUN Studio 11 used.
+
+CCC		:=/opt/SUNWspro/bin/CC
+CC		:=/opt/SUNWspro/bin/cc
+CCADMIN	:=/opt/SUNWspro/bin/CCadmin
+AR  	:=$(CCC) -xar -o
+
+RELEASE_FLAGS	:= -fast -s -xO5 -DNDEBUG -s
+DEBUG_FLAGS		:= -g -D_DEBUG
+PIC_FLAG 		:= -KPIC
+
+CXXFLAGS	:= $(FLAGS) -w -mt -misalign -xtarget=ultra -xarch=v8
+CFLAGS 		:= $(FLAGS) -w -xCC -mt -misalign -xtarget=ultra -xarch=v8
+LIBS 		:= -lpthread -lposix4 -lm -lthread -ldl -lCrun -lCstd

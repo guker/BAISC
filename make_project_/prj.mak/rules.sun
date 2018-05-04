@@ -1,0 +1,41 @@
+#define SUN Studio's Compiler rules.
+
+.PHONY: _begin clean doclean $(MODULE_DEPONS_BUILD) $(MODULE_DEPONS_CLEAN)
+
+build: _begin $(MODULE_OUTPUT)/$(MODULE_TARGET);
+
+_begin: $(MODULE_DEPONS_BUILD)
+	@$(SCRIPTS) ckdir -f "$(MODULE_OBJ)"
+
+$(MODULE_DEPONS_BUILD):
+	@depon=`echo ${dir $@} | sed -e 's:\(\.*\)\(/\)$$:\1:'`;	\
+	depon=`dirname $$depon`; $(MAKE) -C $$depon build
+
+$(MODULE_OUTPUT)/$(MODULE_SO):	$(MODULE_OBJ) $(LOCAL_LIBS)
+	$(CCC) -G -h $(MODULE_SO) $(CXXFLAGS) -o $@ $(MODULE_OBJ) $(LOCAL_LIBS) $(LIBS)
+
+$(MODULE_OUTPUT)/$(MODULE_EXEC):$(MODULE_OBJ) $(LOCAL_LIBS)
+	$(CCC) $(CXXFLAGS) -o $@ $(MODULE_OBJ) $(LOCAL_LIBS) $(LIBS)
+
+$(MODULE_OUTPUT)/$(MODULE_LIB):	$(MODULE_OBJ) $(LOCAL_LIBS)
+	$(AR) $@ $(MODULE_OBJ) $(LOCAL_LIBS)
+
+$(MODULE_OUTPUT)/%.o : $(MODULE_DIR)/%.cxx
+	$(CCC) -c $(CXXFLAGS) $(LOCAL_FLAGS) -o $@ $<
+
+$(MODULE_OUTPUT)/%.o : $(MODULE_DIR)/%.cpp
+	$(CCC) -c $(CXXFLAGS) $(LOCAL_FLAGS) -o $@ $<
+
+$(MODULE_OUTPUT)/%.o : $(MODULE_DIR)/%.c
+	@tr -d '\r' < $< > $<.$$$$; getfacl $< | setfacl -f - $<.$$$$;  $(MV) $<.$$$$ $<
+	$(CC) -c $(CFLAGS) $(LOCAL_FLAGS) -o $@ $<
+
+clean: doclean $(MODULE_DEPONS_CLEAN) ;
+
+$(MODULE_DEPONS_CLEAN):
+	@depon=`echo ${dir $@} | sed -e 's:\(\.*\)\(/\)$$:\1:'`;	\
+	depon=`dirname $$depon`; $(MAKE) -C $$depon clean
+
+doclean:
+	@$(RM) $(MODULE_OUTPUT)/$(MODULE_TARGET) $(MODULE_OBJ) $(MODULE_DEPS)
+	@$(CCADMIN) -clean -d"$(MODULE_OUTPUT)"
